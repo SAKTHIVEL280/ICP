@@ -1,6 +1,12 @@
+#storage place for objects that multiple files need to use.
 from flask import Flask
+from config import Config # for importing the config file's contents
+from extensions import db # for importing the db object from extensions.py
 
 app = Flask(__name__)
+app.config.from_object(Config)
+
+db.init_app(app)
 
 @app.route("/")
 def home():
