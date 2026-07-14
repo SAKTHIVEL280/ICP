@@ -454,7 +454,7 @@ This reduces unnecessary joins and simplifies database queries.
 ## Frontend
 
 * HTML
-* CSS
+* CSS (Vanilla with mobile responsive grids)
 * JavaScript
 
 ---
@@ -487,7 +487,6 @@ This reduces unnecessary joins and simplifies database queries.
 
 * QR Code Complaint Registration
 * Email Notifications
-* Mobile Responsive Design
 * Export Reports (PDF / Excel)
 
 ---
