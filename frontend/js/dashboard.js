@@ -259,8 +259,8 @@ async function loadComplaintsList() {
             // Define custom columns based on role
             let actionButtonsHTML = `<button class="btn btn-sm btn-outline-primary" onclick="loadComplaintDetails(${c.id})">View</button>`;
             
-            // Managers get assignment shortcuts
-            if (role === "Manager") {
+            // Managers and Administrators get assignment shortcuts
+            if (role === "Manager" || role === "Administrator") {
                 if (!c.technician) {
                     actionButtonsHTML += ` <button class="btn btn-sm btn-warning ms-1" onclick="openAssignmentModal(${c.id}, null)">Assign</button>`;
                 } else {
@@ -530,8 +530,8 @@ async function openAssignmentModal(complaintId, currentTechId) {
     window.isReassignment = currentTechId !== null;
 
     try {
-        // Fetch active technicians list in the manager's department
-        const technicians = await apiFetch("/manager/technicians", { method: "GET" });
+        // Fetch active technicians list in the target department
+        const technicians = await apiFetch("/manager/technicians?complaint_id=" + complaintId, { method: "GET" });
         
         const select = document.getElementById("tech-select");
         select.innerHTML = '<option value="">-- Choose Technician --</option>';
@@ -608,6 +608,21 @@ async function handleVerify(action) {
 // -------------------------------------------------------------
 // 13. Notifications Loader
 // -------------------------------------------------------------
+async function clearAllNotifications(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    try {
+        await apiFetch("/notifications", { method: "DELETE" });
+        showSuccess("All notifications cleared successfully.");
+        await loadNotifications();
+    } catch (err) {
+        showError(err.message);
+    }
+}
+window.clearAllNotifications = clearAllNotifications;
+
 async function loadNotifications() {
     try {
         const list = await apiFetch("/notifications", { method: "GET" });
@@ -636,7 +651,8 @@ async function loadNotifications() {
         displayList.forEach(n => {
             const li = document.createElement("li");
             const a = document.createElement("a");
-            a.className = `dropdown-item ${n.is_read ? '' : 'fw-bold'}`;
+            a.className = `dropdown-item text-wrap ${n.is_read ? '' : 'fw-bold'}`;
+            a.style.whiteSpace = "normal";
             a.href = "#";
             a.innerText = n.message;
             
@@ -870,26 +886,34 @@ function hideAlerts() {
 // -------------------------------------------------------------
 async function loadUsersList() {
     const tableBody = document.getElementById("users-table-body");
-    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Loading user records...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="8" class="text-center">Loading user records...</td></tr>';
     
     try {
-        // Fetch accounts list from secure backend endpoint
         const users = await apiFetch("/auth/users", { method: "GET" });
+        window.usersList = users; // Save globally for easy modal lookups
         tableBody.innerHTML = "";
 
         if (users.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No users registered in your scope.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No users registered in your scope.</td></tr>`;
             return;
         }
 
-        // Render rows
         users.forEach(u => {
             const row = document.createElement("tr");
             
-            // Format status badge
             const statusBadge = u.is_active 
                 ? '<span class="badge bg-success">Active</span>' 
                 : '<span class="badge bg-secondary">Inactive</span>';
+
+            let actionsHtml = '<span class="text-muted small">N/A</span>';
+            if (currentUser.role === "Administrator") {
+                const deleteBtn = u.id === 1 
+                    ? '<button class="btn btn-sm btn-outline-secondary ms-1" disabled>Delete</button>'
+                    : `<button class="btn btn-sm btn-outline-danger ms-1" onclick="handleDeleteUser(${u.id})">Delete</button>`;
+                actionsHtml = `
+                    <button class="btn btn-sm btn-outline-primary" onclick="openEditUserModal(${u.id})">Edit</button>${deleteBtn}
+                `;
+            }
 
             row.innerHTML = `
                 <td>${u.id}</td>
@@ -899,6 +923,7 @@ async function loadUsersList() {
                 <td><span class="badge bg-primary">${sanitizeText(u.role)}</span></td>
                 <td>${sanitizeText(u.department_name)}</td>
                 <td>${statusBadge}</td>
+                <td>${actionsHtml}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -908,21 +933,30 @@ async function loadUsersList() {
 }
 
 async function openCreateUserModal() {
-    // Reset any previous form fields
     const form = document.getElementById("create-user-form");
     form.reset();
+    window.editingUserId = null;
+
+    document.getElementById("createUserModalLabel").innerText = "Register New User Account";
+    document.getElementById("usr-submit-btn").innerText = "Register User";
+    document.getElementById("usr-status-group").classList.add("d-none");
+    
+    const pwdInput = document.getElementById("usr-password");
+    pwdInput.placeholder = "Minimum 6 characters";
+    document.getElementById("usr-password-label").innerText = "Password *";
 
     const role = currentUser.role;
     const deptGroup = document.getElementById("usr-dept-group");
     const deptSelect = document.getElementById("usr-dept");
     const roleSelect = document.getElementById("usr-role");
 
+    roleSelect.disabled = false;
+    deptSelect.disabled = false;
+
     try {
-        // Populate departments select menu from categories list
         const categories = await apiFetch("/complaints/categories", { method: "GET" });
         deptSelect.innerHTML = '<option value="">-- Choose Department --</option>';
         
-        // Filter unique departments
         const depts = {};
         categories.forEach(c => {
             depts[c.department_id] = c.department_name;
@@ -935,22 +969,16 @@ async function openCreateUserModal() {
             deptSelect.appendChild(opt);
         }
 
-        // Apply view adjustments based on role permissions
         if (role === "Manager") {
-            // Managers are restricted to their own department, so hide input selection
             deptGroup.classList.add("d-none");
             deptSelect.removeAttribute("required");
-
-            // Managers can only create Employee and Technician roles
             roleSelect.innerHTML = `
                 <option value="Employee">Employee</option>
                 <option value="Technician">Technician</option>
             `;
         } else if (role === "Administrator") {
-            // Administrators must specify a department and can assign all roles
             deptGroup.classList.remove("d-none");
             deptSelect.setAttribute("required", "required");
-
             roleSelect.innerHTML = `
                 <option value="Employee">Employee</option>
                 <option value="Technician">Technician</option>
@@ -959,7 +987,6 @@ async function openCreateUserModal() {
             `;
         }
 
-        // Show modal Dialog
         const modal = new bootstrap.Modal(document.getElementById("createUserModal"));
         modal.show();
 
@@ -968,54 +995,149 @@ async function openCreateUserModal() {
     }
 }
 
+async function openEditUserModal(userId) {
+    try {
+        const u = window.usersList.find(x => x.id === userId);
+        if (!u) return;
+
+        window.editingUserId = userId;
+
+        document.getElementById("createUserModalLabel").innerText = "Edit User Details";
+        document.getElementById("usr-submit-btn").innerText = "Save Changes";
+
+        const statusGroup = document.getElementById("usr-status-group");
+        statusGroup.classList.remove("d-none");
+        document.getElementById("usr-status").value = u.is_active ? "true" : "false";
+
+        const pwdInput = document.getElementById("usr-password");
+        pwdInput.value = "";
+        pwdInput.placeholder = "Leave blank to keep current password";
+        document.getElementById("usr-password-label").innerText = "Password (Optional)";
+
+        document.getElementById("usr-name").value = u.name;
+        document.getElementById("usr-email").value = u.email;
+
+        const roleSelect = document.getElementById("usr-role");
+        roleSelect.innerHTML = `
+            <option value="Employee">Employee</option>
+            <option value="Technician">Technician</option>
+            <option value="Manager">Manager</option>
+            <option value="Administrator">Administrator</option>
+        `;
+        roleSelect.value = u.role;
+
+        const deptGroup = document.getElementById("usr-dept-group");
+        const deptSelect = document.getElementById("usr-dept");
+        deptGroup.classList.remove("d-none");
+        deptSelect.setAttribute("required", "required");
+
+        const categories = await apiFetch("/complaints/categories", { method: "GET" });
+        deptSelect.innerHTML = '<option value="">-- Choose Department --</option>';
+        
+        const depts = {};
+        categories.forEach(c => {
+            depts[c.department_id] = c.department_name;
+        });
+
+        for (const [id, name] of Object.entries(depts)) {
+            const opt = document.createElement("option");
+            opt.value = id;
+            opt.innerText = name;
+            deptSelect.appendChild(opt);
+        }
+        deptSelect.value = u.department_id || "";
+
+        if (userId === 1) {
+            roleSelect.disabled = true;
+            deptSelect.disabled = true;
+            statusGroup.classList.add("d-none");
+        } else {
+            roleSelect.disabled = false;
+            deptSelect.disabled = false;
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById("createUserModal"));
+        modal.show();
+
+    } catch (err) {
+        showError("Failed to load user details: " + err.message);
+    }
+}
+
 async function handleUserCreateSubmit(e) {
     e.preventDefault();
 
-    const employee_id = document.getElementById("usr-emp-id").value;
     const name = document.getElementById("usr-name").value;
     const email = document.getElementById("usr-email").value;
     const password = document.getElementById("usr-password").value;
     const role = document.getElementById("usr-role").value;
     
-    // Only fetch department if Administrator (Managers department is resolved by backend)
     const deptSelect = document.getElementById("usr-dept");
     const department_id = (currentUser.role === "Administrator" && deptSelect.value) 
         ? parseInt(deptSelect.value) 
         : null;
 
+    if (!window.editingUserId && (!password || password.trim() === "")) {
+        alert("Password is required for new registrations.");
+        return;
+    }
+
     const submitBtn = document.getElementById("usr-submit-btn");
 
     try {
         submitBtn.disabled = true;
-        submitBtn.innerText = "Registering...";
-
-        // Submit to registration API endpoint
-        await apiFetch("/auth/register", {
-            method: "POST",
-            body: {
-                employee_id,
-                name,
-                email,
-                password,
-                role,
-                department_id
+        
+        if (window.editingUserId) {
+            submitBtn.innerText = "Saving Changes...";
+            
+            const is_active = document.getElementById("usr-status").value === "true";
+            const payload = { name, email, role, department_id, is_active };
+            if (password && password.trim() !== "") {
+                payload.password = password;
             }
-        });
 
-        // Hide registration modal dialog
+            await apiFetch(`/auth/users/${window.editingUserId}`, {
+                method: "PUT",
+                body: payload
+            });
+
+            showSuccess(`User account ${name} updated successfully!`);
+        } else {
+            submitBtn.innerText = "Registering...";
+
+            await apiFetch("/auth/register", {
+                method: "POST",
+                body: { name, email, password, role, department_id }
+            });
+
+            showSuccess(`User account ${name} registered successfully!`);
+        }
+
         const modalElement = document.getElementById("createUserModal");
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
 
-        showSuccess(`User account ${name} registered successfully!`);
-        
-        // Reload users list data
         await loadUsersList();
 
     } catch (err) {
-        alert("Registration failed: " + err.message);
+        alert("Operation failed: " + err.message);
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerText = "Register User";
+        submitBtn.innerText = window.editingUserId ? "Save Changes" : "Register User";
     }
 }
+
+async function handleDeleteUser(userId) {
+    if (!confirm("Are you sure you want to delete this user account? This action cannot be undone.")) {
+        return;
+    }
+
+    try {
+        await apiFetch(`/auth/users/${userId}`, { method: "DELETE" });
+        showSuccess("User account deleted successfully.");
+        await loadUsersList();
+    } catch (err) {
+        alert("Failed to delete user: " + err.message);
+    }
+}
+

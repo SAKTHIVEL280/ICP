@@ -123,21 +123,10 @@ def seed_database():
             db.session.commit()
             print(f"Created User: {name} | Role: {role} | Email: {email} | Password: {raw_password}")
 
-        # Define default users across all four roles: Employee, Technician, Manager, Administrator
-        # A. Administrator (has full access, no specific department)
-        create_default_user("EMP001", "System Administrator", "admin@company.com", "admin123", "Administrator")
-
-        # B. Department Managers
-        create_default_user("EMP002", "Sarah Connor (IT Manager)", "itmanager@company.com", "manager123", "Manager", "IT Support")
-        create_default_user("EMP003", "John Doe (Facilities Manager)", "facmanager@company.com", "manager123", "Manager", "Facilities")
-
-        # C. Technicians (belong to specific departments to resolve issues)
-        create_default_user("EMP004", "Alice Smith (IT Technician)", "tech.it@company.com", "tech123", "Technician", "IT Support")
-        create_default_user("EMP005", "Bob Johnson (Facilities Tech)", "tech.fac@company.com", "tech123", "Technician", "Facilities")
-
-        # D. Regular Employees (can submit complaints)
-        create_default_user("EMP006", "David Miller", "david@company.com", "emp123", "Employee", "IT Support")
-        create_default_user("EMP007", "Emily Davis", "emily@company.com", "emp123", "Employee", "Facilities")
+        # Define default users
+        # Only seed the primary System Administrator account (as requested by user)
+        # Other users will be created dynamically via the User Management panel.
+        create_default_user("EMP001", "System Administrator", "admin@company.com", "Admin@123", "Administrator")
 
         print("Database seeding completed successfully!")
 

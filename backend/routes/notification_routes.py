@@ -7,7 +7,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 # Import our notification service functions
 from services.notification_service import (
     get_user_notifications,
-    mark_notification_as_read
+    mark_notification_as_read,
+    clear_all_user_notifications
 )
 
 # Create a Flask Blueprint named 'notifications'
@@ -56,3 +57,16 @@ def read(notification_id):
         "notification_id": notification.id,
         "is_read": notification.is_read
     }), 200
+
+@notifications_bp.route("", methods=["DELETE"])
+@jwt_required()
+def clear_all():
+    """
+    DELETE /api/notifications
+    Deletes all notifications for the logged-in user.
+    """
+    user_id = int(get_jwt_identity())
+    success, error = clear_all_user_notifications(user_id)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({"message": "All notifications cleared successfully"}), 200

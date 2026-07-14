@@ -79,3 +79,19 @@ body {
     top: 6px;
     border: 2px solid #ffffff;
 }
+
+/* Responsive sidebar and layout overrides for tablets and mobile devices */
+@media (max-width: 768px) {
+    #dashboard-layout {
+        flex-direction: column !important;
+    }
+    .sidebar {
+        width: 100% !important;
+        min-height: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+    .content-area {
+        padding: 15px !important;
+    }
+}

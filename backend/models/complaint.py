@@ -138,3 +138,19 @@ class Complaint(db.Model):
         backref="complaints",
         lazy=True
     )
+
+    # 5. A complaint is raised by an employee (User)
+    employee = db.relationship(
+        "User",
+        foreign_keys=[employee_id],
+        backref="raised_complaints",
+        lazy=True
+    )
+
+    # 6. A complaint can be assigned to a technician (User)
+    technician = db.relationship(
+        "User",
+        foreign_keys=[technician_id],
+        backref="assigned_complaints",
+        lazy=True
+    )

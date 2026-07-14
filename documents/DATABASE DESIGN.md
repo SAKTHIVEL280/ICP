@@ -88,7 +88,7 @@ Relationship: - One Department → Many Categories
   employee_id     VARCHAR(20)
   name            VARCHAR(100)
   email           VARCHAR(120)
-  password_hash   TEXT
+  password        TEXT
   role            ENUM
   department_id   INTEGER
   is_active       BOOLEAN

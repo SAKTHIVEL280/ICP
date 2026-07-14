@@ -8,8 +8,14 @@ def register_user(data):
     if User.query.filter_by(email=data["email"]).first():
         return None, "Email already exists"
 
-    if User.query.filter_by(employee_id=data["employee_id"]).first():
-        return None, "Employee ID already exists"
+    # Automatically generate a unique, formatted Employee ID (e.g., EMP002, EMP003)
+    max_user = User.query.order_by(User.id.desc()).first()
+    next_num = (max_user.id + 1) if max_user else 1
+    while True:
+        emp_id = f"EMP{next_num:03d}"
+        if not User.query.filter_by(employee_id=emp_id).first():
+            break
+        next_num += 1
 
     hashed_password = bcrypt.hashpw(
         data["password"].encode("utf-8"),
@@ -17,7 +23,7 @@ def register_user(data):
     ).decode("utf-8")
 
     user = User(
-        employee_id=data["employee_id"],
+        employee_id=emp_id,
         name=data["name"],
         email=data["email"],
         password=hashed_password,

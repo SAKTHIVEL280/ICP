@@ -35,34 +35,16 @@ Flask REST API
 ``` text
 frontend/
 │
-├── index.html
-├── login.html
-├── dashboard.html
+├── index.html                  # Landing gatekeeper (auth status check & redirect)
+├── login.html                  # Sign-in form template
+├── dashboard.html              # Dynamic single-page dashboard container
 │
 ├── css/
-│   ├── style.css
-│   ├── login.css
-│   ├── dashboard.css
-│   ├── forms.css
-│   └── tables.css
+│   └── style.css               # Short custom overrides (sidebar size, timeline layout)
 │
-├── js/
-│   ├── auth.js
-│   ├── dashboard.js
-│   ├── complaints.js
-│   ├── technician.js
-│   ├── manager.js
-│   ├── admin.js
-│   ├── notifications.js
-│   ├── api.js
-│   └── utils.js
-│
-├── assets/
-│   ├── images/
-│   ├── icons/
-│   └── logo/
-│
-└── uploads/
+└── js/
+    ├── auth.js                 # Session manager: JWT token decoding, padding, & guards
+    └── dashboard.js            # Consolidated interface driver: fetches list, modals, CSS charts
 ```
 
 ------------------------------------------------------------------------
@@ -108,6 +90,7 @@ frontend/
 -   Department Management
 -   Category Management
 -   Complaint Management
+-   Technician Assignment (Shared with Manager)
 -   Reports
 -   System Settings
 
@@ -220,7 +203,7 @@ Features - Search - Filter - Sort - Pagination
 -   Resolved
 -   Closed
 
-Unread notifications are highlighted.
+Unread notifications are highlighted. The dropdown contains a static top bar with a "Clear All" button allowing users to delete all notifications instantly.
 
 ------------------------------------------------------------------------
 
@@ -254,11 +237,9 @@ fetch('/api/complaints', {
 
 # Responsive Design
 
-Desktop - Sidebar visible
+Desktop - Sidebar visible on the left side of the content viewport (width: 240px).
 
-Tablet - Collapsible sidebar
-
-Mobile - Hamburger navigation - Responsive tables - Full-width forms
+Mobile & Tablet (<= 768px) - Responsive stacked layout. The flex direction transitions to vertical, stacking the sidebar above the main content window. Table components are responsive, and form inputs stretch to full width. The notification bell dropdown has a maximum width clamp (90vw) with word-wrapping enabled to prevent viewport overflow.
 
 ------------------------------------------------------------------------
 

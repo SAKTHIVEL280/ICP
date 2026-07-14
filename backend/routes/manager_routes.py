@@ -130,7 +130,8 @@ def reassign():
 def get_department_technicians():
     """
     GET /api/manager/technicians
-    Lists all active technicians inside the manager's department.
+    Lists all active technicians inside the department of the target complaint (for Admins) 
+    or the manager's own department.
     """
     user_id = int(get_jwt_identity())
     claims = get_jwt()
@@ -139,14 +140,24 @@ def get_department_technicians():
     if role != "Manager" and role != "Administrator":
         return jsonify({"error": "Access denied."}), 403
         
-    # Get the manager profile to determine their department
-    manager = User.query.filter_by(id=user_id).first()
-    if not manager or not manager.department_id:
-        return jsonify({"error": "Manager department not configured"}), 400
+    if role == "Administrator":
+        complaint_id = request.args.get("complaint_id", type=int)
+        if not complaint_id:
+            return jsonify({"error": "Missing complaint_id parameter for Administrator query."}), 400
+        from models.complaint import Complaint
+        complaint = Complaint.query.filter_by(id=complaint_id).first()
+        if not complaint:
+            return jsonify({"error": "Complaint not found."}), 404
+        dept_id = complaint.department_id
+    else:
+        manager = User.query.filter_by(id=user_id).first()
+        if not manager or not manager.department_id:
+            return jsonify({"error": "Manager department not configured"}), 400
+        dept_id = manager.department_id
         
-    # Query all users with role 'Technician' who belong to the same department and are active
+    # Query all users with role 'Technician' who belong to the target department and are active
     technicians = User.query.filter_by(
-        department_id=manager.department_id,
+        department_id=dept_id,
         role="Technician",
         is_active=True
     ).all()

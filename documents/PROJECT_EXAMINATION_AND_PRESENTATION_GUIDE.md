@@ -33,10 +33,10 @@ This guide is designed to prepare you for **project reviews, examinations, and p
 ### Q4: Explain the database relationships in this project.
 *   **The Answer**:
     *   **One-to-Many (Category & Complaint)**: A `Category` (e.g. "Printer") has many `Complaints`. Inside the `Category` model, this is defined using `db.relationship('Complaint', backref='category')`. This adds a virtual `.category` attribute to each complaint object, allowing us to read the category details directly (e.g. `complaint.category.name`).
-    *   **Many-to-One (Complaint & User)**: A `Complaint` belongs to an employee (who raised it) and a technician (who resolves it). These are linked using foreign keys pointing to the same `users.id` primary key. In the `User` model, we specify separate relationships using `foreign_keys` arguments:
+    *   **Many-to-One (Complaint & User)**: A `Complaint` belongs to an employee (who raised it) and a technician (who resolves it). These are linked using foreign keys pointing to the same `users.id` primary key. In the `Complaint` model, we specify separate relationships using `foreign_keys` arguments:
         ```python
-        raised_complaints = db.relationship("Complaint", foreign_keys="[Complaint.employee_id]", backref="employee")
-        assigned_complaints = db.relationship("Complaint", foreign_keys="[Complaint.technician_id]", backref="technician")
+        employee = db.relationship("User", foreign_keys=[employee_id], backref="raised_complaints")
+        technician = db.relationship("User", foreign_keys=[technician_id], backref="assigned_complaints")
         ```
 
 ### Q5: What does `cascade="all, delete-orphan"` mean in our models?

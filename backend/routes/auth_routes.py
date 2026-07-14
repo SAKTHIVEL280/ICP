@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from services.auth_service import register_user, login_user
 from models.user import User
+from extensions import db
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -30,7 +31,7 @@ def register():
         return jsonify({"error": "Missing registration payload."}), 400
         
     # Check for required fields to prevent KeyErrors
-    required_fields = ["employee_id", "name", "email", "password", "role"]
+    required_fields = ["name", "email", "password", "role"]
     missing_fields = [f for f in required_fields if f not in data or not data[f]]
     if missing_fields:
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
@@ -112,3 +113,67 @@ def list_users():
         })
         
     return jsonify(results), 200
+
+@auth_bp.route("/users/<int:target_id>", methods=["PUT"])
+@jwt_required()
+def update_user(target_id):
+    claims = get_jwt()
+    role = claims.get("role")
+    
+    if role != "Administrator":
+        return jsonify({"error": "Access denied. Administrator role required."}), 403
+        
+    data = request.get_json()
+    user = User.query.get(target_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+        
+    # Prevent editing the core System Admin ID 1 to avoid locking out the system
+    if target_id == 1 and data.get("role") != "Administrator":
+        return jsonify({"error": "Cannot change the System Administrator's role."}), 400
+        
+    user.name = data.get("name", user.name)
+    user.email = data.get("email", user.email)
+    user.role = data.get("role", user.role)
+    user.department_id = data.get("department_id", user.department_id)
+    user.is_active = data.get("is_active", user.is_active)
+    
+    # If a new password is sent, hash it
+    password = data.get("password")
+    if password and password.strip() != "":
+        import bcrypt
+        user.password = bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt()
+        ).decode("utf-8")
+        
+    db.session.commit()
+    return jsonify({"message": "User updated successfully"}), 200
+
+@auth_bp.route("/users/<int:target_id>", methods=["DELETE"])
+@jwt_required()
+def delete_user(target_id):
+    claims = get_jwt()
+    role = claims.get("role")
+    
+    if role != "Administrator":
+        return jsonify({"error": "Access denied. Administrator role required."}), 403
+        
+    if target_id == 1:
+        return jsonify({"error": "Cannot delete the System Administrator."}), 400
+        
+    user = User.query.get(target_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+        
+    # Check if user has complaints raised or tasks assigned
+    from models.complaint import Complaint
+    has_raised = Complaint.query.filter_by(employee_id=target_id).first()
+    has_assigned = Complaint.query.filter_by(technician_id=target_id).first()
+    
+    if has_raised or has_assigned:
+        return jsonify({"error": "Cannot delete this user because they have complaint tickets linked to their account. Deactivate their status to Inactive instead."}), 400
+        
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted successfully"}), 200

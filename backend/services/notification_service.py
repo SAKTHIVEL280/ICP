@@ -83,3 +83,15 @@ def mark_notification_as_read(notification_id, user_id):
     except Exception as e:
         db.session.rollback()
         return None, str(e)
+
+def clear_all_user_notifications(user_id):
+    """
+    Deletes all notification records belonging to a user.
+    """
+    try:
+        Notification.query.filter_by(user_id=user_id).delete()
+        db.session.commit()
+        return True, None
+    except Exception as e:
+        db.session.rollback()
+        return False, str(e)

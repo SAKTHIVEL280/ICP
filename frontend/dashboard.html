@@ -30,14 +30,22 @@
                 <ul class="navbar-nav align-items-center gap-3">
                     
                     <!-- Notifications bell drop-down list -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link position-relative" href="#" id="notif-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link position-relative px-2" href="#" id="notif-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-bell-fill fs-5"></i>
                             <!-- Dynamic counter counter badge -->
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notif-badge">0</span>
+                            <span class="position-absolute badge rounded-pill bg-danger d-none" id="notif-badge" style="top: -2px; right: -2px; font-size: 0.65rem; padding: 0.25em 0.4em;">0</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notif-dropdown" id="notif-dropdown-list" style="width: 280px;">
-                            <li><a class="dropdown-item text-muted" href="#">No notifications.</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow p-0" aria-labelledby="notif-dropdown" style="width: 320px; max-width: 90vw; white-space: normal;">
+                            <li class="p-2 border-bottom d-flex justify-content-between align-items-center bg-light" style="border-top-left-radius: .25rem; border-top-right-radius: .25rem;">
+                                <span class="fw-bold small text-secondary">Notifications</span>
+                                <button class="btn btn-link text-danger p-0 text-decoration-none small" style="font-size: 0.75rem;" onclick="clearAllNotifications(event)">Clear All</button>
+                            </li>
+                            <li>
+                                <ul class="list-unstyled mb-0 p-0 overflow-auto" id="notif-dropdown-list" style="max-height: 250px;">
+                                    <li><a class="dropdown-item text-muted text-wrap" style="white-space: normal;" href="#">No notifications.</a></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     
@@ -54,7 +62,7 @@
     </nav>
 
     <!-- MAIN TWO COLUMN GRID CONTAINER -->
-    <div class="d-flex">
+    <div class="d-flex" id="dashboard-layout">
         
         <!-- SIDEBAR NAVIGATION PANEL -->
         <aside class="sidebar border-end shadow-sm bg-white">
@@ -318,6 +326,7 @@
                                         <th>Role</th>
                                         <th>Department</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="users-table-body">
@@ -514,11 +523,6 @@
                 </header>
                 <form id="create-user-form">
                     <div class="modal-body">
-                        <!-- Employee ID -->
-                        <div class="mb-3">
-                            <label for="usr-emp-id" class="form-label fw-bold small text-secondary">Employee ID *</label>
-                            <input type="text" id="usr-emp-id" class="form-control" placeholder="e.g. EMP002" required>
-                        </div>
                         
                         <!-- Name -->
                         <div class="mb-3">
@@ -534,8 +538,8 @@
 
                         <!-- Password -->
                         <div class="mb-3">
-                            <label for="usr-password" class="form-label fw-bold small text-secondary">Temporary Password *</label>
-                            <input type="password" id="usr-password" class="form-control" placeholder="Minimum 6 characters" required>
+                            <label for="usr-password" class="form-label fw-bold small text-secondary" id="usr-password-label">Password *</label>
+                            <input type="password" id="usr-password" class="form-control" placeholder="Minimum 6 characters">
                         </div>
 
                         <!-- Role -->
@@ -546,6 +550,15 @@
                                 <option value="Technician">Technician</option>
                                 <option value="Manager">Manager</option>
                                 <option value="Administrator">Administrator</option>
+                            </select>
+                        </div>
+
+                        <!-- Account Status Status (Only visible when editing, hidden during registration) -->
+                        <div class="mb-3 d-none" id="usr-status-group">
+                            <label for="usr-status" class="form-label fw-bold small text-secondary">Account Status *</label>
+                            <select id="usr-status" class="form-select">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
                             </select>
                         </div>
 

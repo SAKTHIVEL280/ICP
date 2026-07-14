@@ -42,35 +42,27 @@ Client (HTML/CSS/JavaScript)
 ``` text
 backend/
 │
-├── app.py
-├── config.py
-├── requirements.txt
+├── app.py                      # Flask entry point and Blueprint registration
+├── config.py                   # App configurations (database URLs, JWT keys)
+├── extensions.py               # Shared SQLAlchemy, Migrate, & JWT instances
+├── requirements.txt            # Python package dependencies
+├── seed.py                     # Initial database seeder script
 │
-├── routes/
-│   ├── auth_routes.py
-│   ├── complaint_routes.py
-│   ├── user_routes.py
-│   ├── manager_routes.py
-│   ├── technician_routes.py
-│   ├── admin_routes.py
-│   ├── report_routes.py
-│   └── notification_routes.py
+├── routes/                     # Blueprint API Endpoints
+│   ├── auth_routes.py          # /api/auth/* endpoints (login, register, users listing)
+│   ├── complaint_routes.py     # /api/complaints/* endpoints (standard CRUD, comments)
+│   ├── manager_routes.py       # /api/manager/* endpoints (technician assignment)
+│   ├── notification_routes.py  # /api/notifications/* endpoints (alerts list)
+│   ├── report_routes.py        # /api/reports/* endpoints (summary counts, CSS charts)
+│   └── test_routes.py          # Quick development diagnostic routes
 │
-├── controllers/
-│   ├── auth_controller.py
-│   ├── complaint_controller.py
-│   ├── assignment_controller.py
-│   ├── report_controller.py
-│   └── user_controller.py
+├── services/                   # Business Logic & Database operations
+│   ├── auth_service.py         # Login and password validation
+│   ├── complaint_service.py    # Ticket lifecycle state changes & auto routing
+│   ├── notification_service.py # Alert generation triggers
+│   └── report_service.py       # Computes statistics counts
 │
-├── services/
-│   ├── auth_service.py
-│   ├── complaint_service.py
-│   ├── notification_service.py
-│   ├── report_service.py
-│   └── upload_service.py
-│
-├── models/
+├── models/                     # SQLAlchemy Database Models (schema)
 │   ├── user.py
 │   ├── complaint.py
 │   ├── department.py
@@ -81,19 +73,10 @@ backend/
 │   ├── complaint_history.py
 │   └── activity_log.py
 │
-├── middleware/
-│   ├── auth.py
-│   ├── role_required.py
-│   └── error_handler.py
+├── middleware/                 # Helper middlewares
+│   └── role_required.py        # Role-based access wrapper
 │
-├── utils/
-│   ├── jwt_utils.py
-│   ├── validators.py
-│   ├── enums.py
-│   └── helpers.py
-│
-├── uploads/
-└── migrations/
+└── uploads/                    # Local storage folder for uploaded file attachments
 ```
 
 ------------------------------------------------------------------------
@@ -103,25 +86,19 @@ backend/
 ## Routes
 
 -   Receive HTTP requests.
--   Map endpoints to controllers.
-
-## Controllers
-
--   Validate requests.
--   Call services.
--   Return HTTP responses.
--   No database queries.
+-   Validate incoming payloads (check for missing parameters).
+-   Route traffic and invoke service layer handlers.
+-   Return HTTP JSON responses.
 
 ## Services
 
--   Implement business logic.
--   Coordinate database operations.
--   Trigger notifications and logging.
+-   Implement core business logic.
+-   Coordinate database transaction operations.
+-   Trigger notification creations and logs.
 
 ## Models
 
--   SQLAlchemy ORM models.
--   Represent database tables.
+-   SQLAlchemy ORM models representing PostgreSQL tables.
 
 ------------------------------------------------------------------------
 
@@ -204,7 +181,7 @@ Log
 -   employee_id
 -   name
 -   email
--   password_hash
+-   password
 -   role
 -   department_id
 -   is_active
@@ -288,11 +265,11 @@ Log
 
 # REST API
 
-## Authentication
+## Authentication & User Management
 
--   POST /api/auth/login
--   POST /api/auth/logout
--   GET /api/auth/profile
+-   POST /api/auth/login (Public)
+-   POST /api/auth/register (Secure - Admin & Manager only)
+-   GET /api/auth/users (Secure - Admin & Manager only)
 
 ## Complaints
 
@@ -300,42 +277,45 @@ Log
 -   GET /api/complaints
 -   GET /api/complaints/{id}
 -   PUT /api/complaints/{id}
--   PATCH /api/complaints/{id}/status
+-   PATCH /api/complaints/{id}/status (Verify & Close / Reopen)
 -   DELETE /api/complaints/{id}
 
-## Manager
+## Manager & Admin (Technician Assignment)
 
 -   GET /api/manager/complaints
+-   GET /api/manager/technicians
 -   POST /api/manager/assign
 -   PATCH /api/manager/reassign
 
-## Technician
+## Technician Tasks
 
 -   GET /api/technician/tasks
 -   PATCH /api/technician/accept/{id}
 -   PATCH /api/technician/progress/{id}
 -   PATCH /api/technician/resolve/{id}
 
-## Comments
+## Comments (Routed under Complaints Blueprint)
 
--   POST /api/comments
--   GET /api/comments/{complaintId}
+-   POST /api/complaints/comments
+-   GET /api/complaints/comments/{complaintId}
 
-## Attachments
+## Attachments & Serving (Routed under Complaints Blueprint)
 
--   POST /api/upload
--   GET /api/attachments/{complaintId}
+-   POST /api/complaints/upload (Upload files)
+-   GET /api/complaints/attachments/{complaintId} (List files metadata)
+-   GET /api/complaints/uploads/{filename} (Serve static raw files)
 
 ## Notifications
 
 -   GET /api/notifications
 -   PATCH /api/notifications/read/{id}
+-   DELETE /api/notifications
 
 ## Reports
 
 -   GET /api/reports/summary
--   GET /api/reports/monthly
 -   GET /api/reports/department
+-   GET /api/reports/priority
 -   GET /api/reports/category
 
 ------------------------------------------------------------------------

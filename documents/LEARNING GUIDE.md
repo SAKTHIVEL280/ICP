@@ -151,17 +151,23 @@ Consolidates all page logic into a single, clean file.
 
 ---
 
-## 4. Hierarchical User Creation (User Management Console)
+## 4. Hierarchical User Management (User CRUD Console)
 
-The user registration endpoint `POST /api/auth/register` is secured and restricted. The creation of new user accounts follows an administrative hierarchy:
+The User Management Console supports secure **Create, Read, Update, and Delete (CRUD)** operations, restricted by role hierarchies:
 
-1.  **Access Rules**:
-    *   **Administrator**: Full access. Can create any user role (Employee, Technician, Manager, Administrator) in any department.
-    *   **Manager**: Department-restricted. Can register new users, but their department ID is locked to the manager's department, and they can only assign `Employee` or `Technician` roles (cannot create managers/admins).
-    *   **Employee / Technician**: Access denied. Cannot register or view user listings.
-2.  **Implementation Code**:
-    *   **Backend ([auth_routes.py](file:///D:/Projects/ICP/backend/routes/auth_routes.py#L8-L47))**: The route checks token claims. If a manager submits, it overrides the `department_id` in the request body with the manager's own `department_id` and checks that the role is either `Employee` or `Technician`.
-    *   **Frontend ([dashboard.js](file:///D:/Projects/ICP/frontend/js/dashboard.js#L868-L985))**: The `openCreateUserModal()` function detects the current user's role. For managers, it hides the department dropdown input (removing the `required` validation rule) and excludes Manager/Admin choices from the role selection list.
+1.  **Access & Action Rules**:
+    *   **Administrator**: Full CRUD access. Can create, edit, update active/inactive status, and delete users.
+    *   **Manager**: Read and Create only (restricted to `Employee` and `Technician` roles in their own department). Cannot edit or delete.
+    *   **Employee / Technician**: Access denied. Cannot access this console.
+2.  **Automatic Employee ID Generation**:
+    *   To prevent inconsistent manual inputs (e.g. entering "emp" with no numbers), the backend automatically assigns an ID formatted as `EMPxxx` (e.g. `EMP002`, `EMP003`) during creation.
+3.  **Delete Safeguard**:
+    *   To prevent breaking database integrity (which would happen if we deleted a user linked to active complaints), the backend route `DELETE /api/auth/users/<id>` validates if the user has raised or been assigned complaints. If they do, it blocks deletion and requests deactivation instead.
+4.  **Implementation Code**:
+    *   **Backend ([auth_routes.py](file:///D:/Projects/ICP/backend/routes/auth_routes.py#L48-L115))**: Outlines `update_user` (PUT) and `delete_user` (DELETE) routes with security blocks.
+    *   **Frontend ([dashboard.js](file:///D:/Projects/ICP/frontend/js/dashboard.js#L871-L1020))**: Utilizes `openEditUserModal()` to toggle the modal to "Edit Mode" (hiding password requirements and displaying status controls) and handles the deletion API requests.
+5.  **Administrator Technician Assignment**:
+    *   Since Administrators have no department context (`department_id=None`), they originally could not list available department technicians. To resolve this, the frontend passes `?complaint_id=X` when fetching technicians. The backend [manager_routes.py](file:///D:/Projects/ICP/backend/routes/manager_routes.py#L130-L153) resolves the ticket's department dynamically, giving Administrators full system-wide assignment capabilities.
 
 ---
 
