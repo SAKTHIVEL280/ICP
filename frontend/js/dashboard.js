@@ -139,6 +139,8 @@ function switchTab(tabId) {
         loadReportsAndCharts();
     } else if (tabId === "tab-users") {
         loadUsersList();
+    } else if (tabId === "tab-admin-settings") {
+        loadAdminSettings();
     }
 }
 
@@ -623,10 +625,24 @@ async function clearAllNotifications(e) {
 }
 window.clearAllNotifications = clearAllNotifications;
 
+let lastNotifIds = new Set();
+
 async function loadNotifications() {
     try {
         const list = await apiFetch("/notifications", { method: "GET" });
-        const unreadCount = list.filter(n => !n.is_read).length;
+        const unreadList = list.filter(n => !n.is_read);
+        const unreadCount = unreadList.length;
+
+        // Check for new notifications to show toast alerts
+        let isFirstLoad = lastNotifIds.size === 0;
+        unreadList.forEach(n => {
+            if (!lastNotifIds.has(n.id)) {
+                lastNotifIds.add(n.id);
+                if (!isFirstLoad) {
+                    showToastNotification(n.message, "info");
+                }
+            }
+        });
 
         // Update badge counter in the top bar
         const badge = document.getElementById("notif-badge");
@@ -1140,4 +1156,338 @@ async function handleDeleteUser(userId) {
         alert("Failed to delete user: " + err.message);
     }
 }
+
+// -------------------------------------------------------------
+// 17. In-App Toast Notifications Banner Renderer
+// -------------------------------------------------------------
+function showToastNotification(message, type = "info") {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+    
+    const toast = document.createElement("div");
+    toast.className = `toast align-items-center text-white bg-${type === 'info' ? 'primary' : type} border-0 show shadow`;
+    toast.setAttribute("role", "alert");
+    toast.setAttribute("aria-live", "assertive");
+    toast.setAttribute("aria-atomic", "true");
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body small fw-semibold">
+                <i class="bi bi-bell-fill me-2"></i> ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto-remove toast from DOM after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 500);
+    }, 5000);
+}
+window.showToastNotification = showToastNotification;
+
+// -------------------------------------------------------------
+// 18. Self-Service Profile & Settings Modals
+// -------------------------------------------------------------
+function openProfileModal() {
+    const modalError = document.getElementById("profile-error-alert");
+    modalError.classList.add("d-none");
+    modalError.innerText = "";
+    
+    // Pre-fill name field
+    document.getElementById("profile-name").value = currentUser.name;
+    document.getElementById("profile-old-password").value = "";
+    document.getElementById("profile-new-password").value = "";
+    
+    const modal = new bootstrap.Modal(document.getElementById("profileModal"));
+    modal.show();
+}
+window.openProfileModal = openProfileModal;
+
+async function submitProfileUpdate() {
+    const modalError = document.getElementById("profile-error-alert");
+    const name = document.getElementById("profile-name").value.trim();
+    const oldPassword = document.getElementById("profile-old-password").value;
+    const newPassword = document.getElementById("profile-new-password").value;
+    
+    modalError.classList.add("d-none");
+    if (!name) return;
+    
+    try {
+        const res = await apiFetch("/auth/profile", {
+            method: "PUT",
+            body: {
+                name: name,
+                old_password: oldPassword || null,
+                new_password: newPassword || null
+            }
+        });
+        
+        // Update local session
+        currentUser.name = res.user.name;
+        document.getElementById("user-name-display").innerText = currentUser.name;
+        
+        // Hide modal
+        const modalEl = document.getElementById("profileModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        
+        showSuccess("Profile settings updated successfully.");
+        showToastNotification("Your profile has been updated.", "success");
+    } catch (err) {
+        modalError.innerText = err.message;
+        modalError.classList.remove("d-none");
+    }
+}
+window.submitProfileUpdate = submitProfileUpdate;
+
+// -------------------------------------------------------------
+// 19. Departments & Categories Configuration Console (Admin only)
+// -------------------------------------------------------------
+async function loadAdminSettings() {
+    try {
+        await Promise.all([
+            loadDepartmentsTable(),
+            loadCategoriesTable()
+        ]);
+    } catch (err) {
+        showError(err.message);
+    }
+}
+window.loadAdminSettings = loadAdminSettings;
+
+async function loadDepartmentsTable() {
+    const tbody = document.getElementById("dept-table-body");
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">Loading...</td></tr>';
+    
+    try {
+        const depts = await apiFetch("/admin/departments", { method: "GET" });
+        tbody.innerHTML = "";
+        
+        if (depts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No departments defined.</td></tr>';
+            return;
+        }
+        
+        depts.forEach(d => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${d.id}</strong></td>
+                <td>${sanitizeText(d.name)}</td>
+                <td class="text-center"><span class="badge bg-secondary">${d.users_count}</span></td>
+                <td class="text-end px-3">
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1" onclick="openEditDeptModal(${d.id}, '${sanitizeText(d.name)}')">
+                        <i class="bi bi-pencil-shadow"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="handleDeleteDept(${d.id})">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load: ${err.message}</td></tr>`;
+    }
+}
+
+let editingDeptId = null;
+function openCreateDeptModal() {
+    editingDeptId = null;
+    document.getElementById("deptModalLabel").innerText = "Add Department";
+    document.getElementById("dept-name").value = "";
+    document.getElementById("dept-error-alert").classList.add("d-none");
+    
+    const modal = new bootstrap.Modal(document.getElementById("deptModal"));
+    modal.show();
+}
+window.openCreateDeptModal = openCreateDeptModal;
+
+function openEditDeptModal(id, name) {
+    editingDeptId = id;
+    document.getElementById("deptModalLabel").innerText = "Edit Department";
+    document.getElementById("dept-name").value = name;
+    document.getElementById("dept-error-alert").classList.add("d-none");
+    
+    const modal = new bootstrap.Modal(document.getElementById("deptModal"));
+    modal.show();
+}
+window.openEditDeptModal = openEditDeptModal;
+
+async function submitDepartmentForm() {
+    const nameInput = document.getElementById("dept-name");
+    const name = nameInput.value.trim();
+    const errorAlert = document.getElementById("dept-error-alert");
+    
+    errorAlert.classList.add("d-none");
+    if (!name) return;
+    
+    try {
+        const url = editingDeptId ? `/admin/departments/${editingDeptId}` : "/admin/departments";
+        const method = editingDeptId ? "PUT" : "POST";
+        
+        await apiFetch(url, {
+            method: method,
+            body: { name: name }
+        });
+        
+        const modalEl = document.getElementById("deptModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        
+        showSuccess(editingDeptId ? "Department updated successfully." : "Department created successfully.");
+        showToastNotification(editingDeptId ? "Department updated." : "Department created.", "success");
+        await loadAdminSettings();
+    } catch (err) {
+        errorAlert.innerText = err.message;
+        errorAlert.classList.remove("d-none");
+    }
+}
+window.submitDepartmentForm = submitDepartmentForm;
+
+async function handleDeleteDept(id) {
+    if (!confirm("Are you sure you want to delete this department?")) return;
+    
+    try {
+        await apiFetch(`/admin/departments/${id}`, { method: "DELETE" });
+        showSuccess("Department deleted successfully.");
+        showToastNotification("Department removed.", "success");
+        await loadAdminSettings();
+    } catch (err) {
+        alert("Operation failed: " + err.message);
+    }
+}
+window.handleDeleteDept = handleDeleteDept;
+
+async function loadCategoriesTable() {
+    const tbody = document.getElementById("category-table-body");
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">Loading...</td></tr>';
+    
+    try {
+        const categories = await apiFetch("/admin/categories", { method: "GET" });
+        tbody.innerHTML = "";
+        
+        if (categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No categories defined.</td></tr>';
+            return;
+        }
+        
+        categories.forEach(c => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><strong>${sanitizeText(c.name)}</strong></td>
+                <td>${sanitizeText(c.department_name)}</td>
+                <td class="text-center"><span class="badge bg-secondary">${c.complaints_count}</span></td>
+                <td class="text-end px-3">
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1" onclick="openEditCategoryModal(${c.id}, '${sanitizeText(c.name)}', ${c.department_id})">
+                        <i class="bi bi-pencil-shadow"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="handleDeleteCategory(${c.id})">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load: ${err.message}</td></tr>`;
+    }
+}
+
+let editingCategoryId = null;
+async function populateCategoryDeptDropdown(selectedDeptId = null) {
+    const select = document.getElementById("category-dept");
+    select.innerHTML = '<option value="">-- Choose Department --</option>';
+    
+    try {
+        const depts = await apiFetch("/admin/departments", { method: "GET" });
+        depts.forEach(d => {
+            const option = document.createElement("option");
+            option.value = d.id;
+            option.innerText = d.name;
+            if (selectedDeptId && d.id === selectedDeptId) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error("Failed to load departments for category form", err);
+    }
+}
+
+async function openCreateCategoryModal() {
+    editingCategoryId = null;
+    document.getElementById("categoryModalLabel").innerText = "Add Category";
+    document.getElementById("category-name").value = "";
+    document.getElementById("category-error-alert").classList.add("d-none");
+    
+    await populateCategoryDeptDropdown();
+    
+    const modal = new bootstrap.Modal(document.getElementById("categoryModal"));
+    modal.show();
+}
+window.openCreateCategoryModal = openCreateCategoryModal;
+
+async function openEditCategoryModal(id, name, departmentId) {
+    editingCategoryId = id;
+    document.getElementById("categoryModalLabel").innerText = "Edit Category";
+    document.getElementById("category-name").value = name;
+    document.getElementById("category-error-alert").classList.add("d-none");
+    
+    await populateCategoryDeptDropdown(departmentId);
+    
+    const modal = new bootstrap.Modal(document.getElementById("categoryModal"));
+    modal.show();
+}
+window.openEditCategoryModal = openEditCategoryModal;
+
+async function submitCategoryForm() {
+    const nameInput = document.getElementById("category-name");
+    const name = nameInput.value.trim();
+    const deptSelect = document.getElementById("category-dept");
+    const deptId = deptSelect.value;
+    const errorAlert = document.getElementById("category-error-alert");
+    
+    errorAlert.classList.add("d-none");
+    if (!name || !deptId) return;
+    
+    try {
+        const url = editingCategoryId ? `/admin/categories/${editingCategoryId}` : "/admin/categories";
+        const method = editingCategoryId ? "PUT" : "POST";
+        
+        await apiFetch(url, {
+            method: method,
+            body: { name: name, department_id: deptId }
+        });
+        
+        const modalEl = document.getElementById("categoryModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        
+        showSuccess(editingCategoryId ? "Category updated successfully." : "Category created successfully.");
+        showToastNotification(editingCategoryId ? "Category updated." : "Category created.", "success");
+        await loadAdminSettings();
+    } catch (err) {
+        errorAlert.innerText = err.message;
+        errorAlert.classList.remove("d-none");
+    }
+}
+window.submitCategoryForm = submitCategoryForm;
+
+async function handleDeleteCategory(id) {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    
+    try {
+        await apiFetch(`/admin/categories/${id}`, { method: "DELETE" });
+        showSuccess("Category deleted successfully.");
+        showToastNotification("Category removed.", "success");
+        await loadAdminSettings();
+    } catch (err) {
+        alert("Operation failed: " + err.message);
+    }
+}
+window.handleDeleteCategory = handleDeleteCategory;
 

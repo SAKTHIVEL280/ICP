@@ -19,13 +19,25 @@ def seed_database():
     with app.app_context():
         print("Starting database seeding...")
 
-        # 1. Clear existing categories, users, and departments to start fresh (useful for testing)
-        # We delete in order of dependencies (child tables first, then parent tables)
+        # 1. Clear existing data in correct dependency order (child tables first)
+        from models.complaint import Complaint
+        from models.comment import Comment
+        from models.attachment import Attachment
+        from models.complaint_history import ComplaintHistory
+        from models.notification import Notification
+        from models.activity_log import ActivityLog
+
+        db.session.query(Comment).delete()
+        db.session.query(Attachment).delete()
+        db.session.query(ComplaintHistory).delete()
+        db.session.query(Complaint).delete()
+        db.session.query(Notification).delete()
+        db.session.query(ActivityLog).delete()
         db.session.query(Category).delete()
         db.session.query(User).delete()
         db.session.query(Department).delete()
         db.session.commit()
-        print("Cleared old data.")
+        print("Cleared old data successfully.")
 
         # 2. Define Departments and their Categories
         # This matches the design specifications in INTERNAL COMPLAINT PORTAL.md

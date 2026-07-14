@@ -270,6 +270,18 @@ Log
 -   POST /api/auth/login (Public)
 -   POST /api/auth/register (Secure - Admin & Manager only)
 -   GET /api/auth/users (Secure - Admin & Manager only)
+-   PUT /api/auth/profile (Secure - Self-service)
+
+## Administrator Configuration Controls
+
+-   GET /api/admin/departments
+-   POST /api/admin/departments
+-   PUT /api/admin/departments/{id}
+-   DELETE /api/admin/departments/{id}
+-   GET /api/admin/categories
+-   POST /api/admin/categories
+-   PUT /api/admin/categories/{id}
+-   DELETE /api/admin/categories/{id}
 
 ## Complaints
 

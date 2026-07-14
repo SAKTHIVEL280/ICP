@@ -19,6 +19,7 @@ from routes.manager_routes import manager_bp # for importing manager_bp blueprin
 from routes.technician_routes import technician_bp # for importing technician_bp blueprint from routes/technician_routes.py
 from routes.notification_routes import notifications_bp # for importing notifications_bp blueprint from routes/notification_routes.py
 from routes.report_routes import reports_bp # for importing reports_bp blueprint from routes/report_routes.py
+from routes.admin_routes import admin_bp # for importing admin_bp blueprint from routes/admin_routes.py
 
 app = Flask(__name__) # create a Flask application instance
 CORS(app) # Enable CORS for all routes so the frontend can interact with the backend API
@@ -32,6 +33,7 @@ app.register_blueprint(manager_bp, url_prefix="/api/manager") # set URL prefix f
 app.register_blueprint(technician_bp, url_prefix="/api/technician") # set URL prefix for technician endpoints
 app.register_blueprint(notifications_bp, url_prefix="/api/notifications") # set URL prefix for notification endpoints
 app.register_blueprint(reports_bp, url_prefix="/api/reports") # set URL prefix for analytics reports endpoints
+app.register_blueprint(admin_bp, url_prefix="/api/admin") # set URL prefix for admin operations endpoints
 
 db.init_app(app) # initialize the database with the Flask application instance
 migrate.init_app(app, db) # initialize the migration functionality with the Flask application instance

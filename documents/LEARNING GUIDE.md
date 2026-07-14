@@ -194,4 +194,21 @@ The database contains a single System Administrator account. All other accounts 
     *   A Manager (e.g., Sarah Connor in IT Support).
     *   A Technician (e.g., Alice Smith in IT Support).
     *   An Employee (e.g., David Miller).
+
+---
+
+## 7. Advanced Administration & Self-Service Features
+
+This portal includes three high-value production features:
+
+1.  **System Config (Department & Category CRUD)**:
+    *   Administrators can manage the organizational structure from the **System Config** tab.
+    *   Adding or editing departments will dynamically update the dropdowns in the User Creation and Category Configuration modals.
+    *   Deleting departments or categories includes strict database safeguards to prevent deleting records if users, categories, or active tickets are linked to them.
+2.  **Live Floating Toast Alerts**:
+    *   During active sessions, the dashboard matches unread notification IDs against a local session cache.
+    *   If a new unread alert arrives from another user (e.g., status changes or assignments), a Bootstrap Toast banner slides up in the bottom-right corner of the viewport.
+3.  **Self-Service Profile Settings**:
+    *   Users can update their profile by clicking the **Edit Profile** button under their name.
+    *   Changing password fields requires verification of the current password using Bcrypt.
 4.  Log out and log in under your new accounts to test the ticket workflow!

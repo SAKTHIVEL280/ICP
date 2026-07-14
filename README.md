@@ -83,7 +83,7 @@ Make sure you have **PostgreSQL** installed and running on your system, and a da
 
 ## 4. Sandbox Test Credentials
 
-Use the default Administrator account to access the portal. You can then use the **User Management** tab to register other roles (Managers, Technicians, and Employees):
+Use the default Administrator account to access the portal. You can then use the **User Management** tab to register other roles, the **System Config** tab to configure departments/categories, or click **Edit Profile** to update your account settings:
 
 | Role | User Name | Login Email | Password | Employee ID |
 | :--- | :--- | :--- | :--- | :--- |

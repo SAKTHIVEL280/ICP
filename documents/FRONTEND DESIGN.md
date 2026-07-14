@@ -205,6 +205,12 @@ Features - Search - Filter - Sort - Pagination
 
 Unread notifications are highlighted. The dropdown contains a static top bar with a "Clear All" button allowing users to delete all notifications instantly.
 
+### Live Toast Alerts
+When new unread notifications are received during active sessions, a dynamic Bootstrap Toast message card floats into the bottom-right corner of the screen, alerting users in real-time without interrupting their workflow.
+
+### Profile Settings (Self-Service)
+Any logged-in user can click on the "Edit Profile" button located underneath their name in the sidebar. This opens a modal where they can change their display name or update their password (which requires entering their current password for security verification).
+
 ------------------------------------------------------------------------
 
 # Authentication Flow

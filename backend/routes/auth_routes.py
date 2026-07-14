@@ -177,3 +177,52 @@ def delete_user(target_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": "User deleted successfully"}), 200
+
+@auth_bp.route("/profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    """
+    PUT /api/auth/profile
+    Allows any logged-in user to update their name or change their password.
+    """
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
+        
+    name = data.get("name")
+    if name and name.strip() != "":
+        user.name = name.strip()
+        
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    
+    if new_password and new_password.strip() != "":
+        if not old_password:
+            return jsonify({"error": "Current password is required to change password."}), 400
+            
+        import bcrypt
+        # Verify old password
+        if not bcrypt.checkpw(old_password.encode("utf-8"), user.password.encode("utf-8")):
+            return jsonify({"error": "Incorrect current password."}), 400
+            
+        # Hash and save new password
+        user.password = bcrypt.hashpw(
+            new_password.strip().encode("utf-8"),
+            bcrypt.gensalt()
+        ).decode("utf-8")
+        
+    db.session.commit()
+    return jsonify({
+        "message": "Profile updated successfully.",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
+        }
+    }), 200
