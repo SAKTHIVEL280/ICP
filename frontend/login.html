@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Internal Complaint Portal</title>
+    <!-- Add descriptive metadata for search engines (SEO) -->
+    <meta name="description" content="Sign in page for the organization's Internal Complaint Portal.">
+    
+    <!-- Include Bootstrap 5 CSS via CDN for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Simple Custom CSS override link -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Center the login form card on the screen -->
+    <div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+        <div class="card shadow-sm border" style="width: 100%; max-width: 400px; border-radius: 12px;">
+            <div class="card-body p-4">
+                
+                <!-- Page Branding -->
+                <div class="text-center mb-4">
+                    <h2 class="text-primary fw-bold" id="branding-title">ICP Portal</h2>
+                    <p class="text-muted small">Internal Complaint Portal</p>
+                </div>
+
+                <!-- Alert banner for displaying backend validation errors -->
+                <div class="alert alert-danger d-none small" id="error-alert" role="alert">
+                    <!-- Text is injected dynamically by JavaScript -->
+                </div>
+
+                <!-- Login HTML Form -->
+                <form id="login-form">
+                    
+                    <!-- Email field -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label small fw-bold text-secondary">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="form-control" 
+                            placeholder="name@company.com" 
+                            required 
+                            autocomplete="username"
+                        >
+                    </div>
+
+                    <!-- Password field -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label small fw-bold text-secondary">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            class="form-control" 
+                            placeholder="Enter password" 
+                            required 
+                            autocomplete="current-password"
+                        >
+                    </div>
+
+                    <!-- Submit action button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fs-6 fw-bold" id="submit-btn">
+                            Sign In
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Auth helper script containing session check methods -->
+    <script src="js/auth.js"></script>
+    
+    <script>
+        // Guard route: if user is already logged in, redirect them immediately to the dashboard
+        requireGuest();
+
+        // Listen for form submissions
+        document.getElementById("login-form").addEventListener("submit", async (event) => {
+            // Prevent default page reloading behaviour on submission
+            event.preventDefault();
+            
+            // Read form values
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            
+            const errorAlert = document.getElementById("error-alert");
+            const submitBtn = document.getElementById("submit-btn");
+            
+            // Clear past validation error states
+            errorAlert.classList.add("d-none");
+            errorAlert.innerText = "";
+            
+            try {
+                // Show loading state and disable double clicks
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Signing In...";
+                
+                                // Submit login API call
+                const response = await fetch("http://127.0.0.1:5000/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                // If API rejects credentials, throw error
+                if (!response.ok) {
+                    throw new Error(data.error || "Invalid credentials. Please try again.");
+                }
+                
+                // Save access token to localStorage
+                localStorage.setItem("access_token", data.access_token);
+                
+                // Redirect user to the dashboard
+                window.location.href = "dashboard.html";
+                
+            } catch (err) {
+                // Show error message banner
+                errorAlert.innerText = err.message;
+                errorAlert.classList.remove("d-none");
+                
+                // Reset submit button state
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Sign In";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Internal Complaint Portal</title>
+    <!-- Descriptive metadata for SEO -->
+    <meta name="description" content="Dashboard area for the organization's Internal Complaint Portal.">
+    
+    <!-- Include Bootstrap 5 CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Bootstrap Icons CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom stylesheet overrides -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- TOP NAVIGATION BAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" href="#" onclick="switchTab('tab-home')">ICP Dashboard</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbar" aria-controls="topNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse justify-content-end" id="topNavbar">
+                <ul class="navbar-nav align-items-center gap-3">
+                    
+                    <!-- Notifications bell drop-down list -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" href="#" id="notif-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                            <!-- Dynamic counter counter badge -->
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notif-badge">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notif-dropdown" id="notif-dropdown-list" style="width: 280px;">
+                            <li><a class="dropdown-item text-muted" href="#">No notifications.</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Logout utility button -->
+                    <li class="nav-item">
+                        <button class="btn btn-outline-danger btn-sm" id="logout-btn">
+                            <i class="bi bi-box-arrow-right"></i> Sign Out
+                        </button>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN TWO COLUMN GRID CONTAINER -->
+    <div class="d-flex">
+        
+        <!-- SIDEBAR NAVIGATION PANEL -->
+        <aside class="sidebar border-end shadow-sm bg-white">
+            <div class="p-3 text-center border-bottom bg-light">
+                <div class="fw-bold fs-6 text-dark" id="user-name-display">User Name</div>
+                <div class="text-muted small" id="user-role-display">Role</div>
+            </div>
+            
+            <!-- Navigation links -->
+            <div class="list-group list-group-flush mt-3">
+                
+                <div class="list-group-item active" data-tab="tab-home">
+                    <i class="bi bi-house-door-fill me-2"></i> Home
+                </div>
+                
+                <div class="list-group-item" data-tab="tab-list">
+                    <i class="bi bi-list-task me-2"></i> <span id="nav-complaints-text">Complaints</span>
+                </div>
+                
+                <!-- Submit Ticket (Visible to Employee and Admin roles) -->
+                <div class="list-group-item role-restricted role-employee" data-tab="tab-new">
+                    <i class="bi bi-plus-circle-fill me-2"></i> New Complaint
+                </div>
+                
+                <!-- Reports & Statistics (Visible to Manager and Admin roles) -->
+                <div class="list-group-item role-restricted role-manager" data-tab="tab-reports">
+                    <i class="bi bi-bar-chart-fill me-2"></i> Reports & Stats
+                </div>
+                
+                <!-- User Management (Visible to Manager and Admin roles) -->
+                <div class="list-group-item role-restricted role-manager" data-tab="tab-users">
+                    <i class="bi bi-people-fill me-2"></i> User Management
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- MAIN DYNAMIC CONTENT AREA -->
+        <div class="content-area">
+            
+            <!-- Global alert message banners -->
+            <div class="alert alert-success d-none mb-4" id="success-alert-banner" role="alert"></div>
+            <div class="alert alert-danger d-none mb-4" id="error-alert-banner" role="alert"></div>
+
+            <!-- TAB PANE: DASHBOARD HOME -->
+            <section class="tab-pane" id="tab-home">
+                <div class="mb-4">
+                    <h2 class="fw-bold">Welcome back!</h2>
+                    <p class="text-muted">Here is an overview of the complaint portal ticket statistics.</p>
+                </div>
+
+                <!-- Counts cards row -->
+                <div class="row g-4 mb-5">
+                    
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small">Total Tickets</h6>
+                                <h3 class="fw-bold text-dark mt-2" id="stat-total">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small">Open Tickets</h6>
+                                <h3 class="fw-bold text-primary mt-2" id="stat-open">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small">Resolved Fixes</h6>
+                                <h3 class="fw-bold text-success mt-2" id="stat-resolved">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="card shadow-sm border h-100">
+                            <div class="card-body">
+                                <h6 class="text-muted text-uppercase small">Closed Tickets</h6>
+                                <h3 class="fw-bold text-secondary mt-2" id="stat-closed">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Basic description of the portal -->
+                <div class="card shadow-sm border">
+                    <div class="card-header bg-light fw-bold">About the Portal</div>
+                    <div class="card-body">
+                        <p class="card-text text-secondary mb-0">
+                            The Internal Complaint Portal enables employees to quickly log issues related to IT support, Facilities management, HR, Maintenance, and Workplace Safety. Once submitted, your issue is routed automatically to the corresponding department. A technician is assigned, and you are notified at every step. You must verify and close the ticket once the technician marks it as Resolved.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB PANE: COMPLAINTS LIST TABLE -->
+            <section class="tab-pane d-none" id="tab-list">
+                <div class="card shadow-sm border">
+                    <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                        <span>Complaints List</span>
+                        <button class="btn btn-sm btn-primary" onclick="loadComplaintsList()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ticket ID</th>
+                                        <th>Title</th>
+                                        <th>Category</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Created Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="complaints-table-body">
+                                    <!-- Populated dynamically by JS -->
+                                    <tr>
+                                        <td colspan="7" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB PANE: NEW COMPLAINT FORM -->
+            <section class="tab-pane d-none" id="tab-new">
+                <div class="card shadow-sm border" style="max-width: 700px; margin: 0 auto;">
+                    <div class="card-header bg-light fw-bold">Raise a New Ticket</div>
+                    <div class="card-body p-4">
+                        
+                        <form id="new-complaint-form">
+                            <!-- Title -->
+                            <div class="mb-3">
+                                <label for="comp-title" class="form-label fw-bold small text-secondary">Summary Title *</label>
+                                <input type="text" id="comp-title" class="form-control" placeholder="e.g. Laptop charger not working" required>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-3">
+                                <label for="comp-description" class="form-label fw-bold small text-secondary">Description *</label>
+                                <textarea id="comp-description" class="form-control" rows="4" placeholder="Detail the issue..." required></textarea>
+                            </div>
+
+                            <!-- Category and Priority row -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="comp-category" class="form-label fw-bold small text-secondary">Category *</label>
+                                    <select id="comp-category" class="form-select" required>
+                                        <option value="">Loading...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="comp-priority" class="form-label fw-bold small text-secondary">Priority</label>
+                                    <select id="comp-priority" class="form-select">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="mb-3">
+                                <label for="comp-location" class="form-label fw-bold small text-secondary">Location / Room *</label>
+                                <input type="text" id="comp-location" class="form-control" placeholder="e.g. Block A, Room 102" required>
+                            </div>
+
+                            <!-- File upload -->
+                            <div class="mb-4">
+                                <label for="comp-file" class="form-label fw-bold small text-secondary">Attachment File (Optional)</label>
+                                <input type="file" id="comp-file" class="form-control">
+                            </div>
+
+                            <!-- Submit button actions -->
+                            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                                <button type="reset" class="btn btn-secondary">Reset</button>
+                                <button type="submit" class="btn btn-primary" id="comp-submit-btn">Submit Ticket</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB PANE: REPORTS & STATS (MANAGERS & ADMINS) -->
+            <section class="tab-pane d-none" id="tab-reports">
+                
+                <!-- Aggregation values table -->
+                <div class="row g-4 mb-4">
+                    <div class="col"><div class="card shadow-sm border p-3 text-center"><div class="text-muted small">Total</div><h4 class="fw-bold mb-0" id="rep-total">0</h4></div></div>
+                    <div class="col"><div class="card shadow-sm border p-3 text-center"><div class="text-muted small text-primary">Open</div><h4 class="fw-bold text-primary mb-0" id="rep-open">0</h4></div></div>
+                    <div class="col"><div class="card shadow-sm border p-3 text-center"><div class="text-muted small text-success">Resolved</div><h4 class="fw-bold text-success mb-0" id="rep-resolved">0</h4></div></div>
+                    <div class="col"><div class="card shadow-sm border p-3 text-center"><div class="text-muted small text-secondary">Closed</div><h4 class="fw-bold text-secondary mb-0" id="rep-closed">0</h4></div></div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <!-- Departments chart -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border">
+                            <div class="card-header bg-light fw-bold">Department Distribution</div>
+                            <div class="card-body" id="rep-dept-chart">
+                                <!-- Populated dynamically by progress bars -->
+                                <p class="text-muted small">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Priorities chart -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border">
+                            <div class="card-header bg-light fw-bold">Priority Distribution</div>
+                            <div class="card-body" id="rep-priority-chart">
+                                <!-- Populated dynamically by progress bars -->
+                                <p class="text-muted small">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category breakdown list -->
+                <div class="card shadow-sm border">
+                    <div class="card-header bg-light fw-bold">Category Distribution</div>
+                    <ul class="list-group list-group-flush" id="rep-category-list">
+                        <!-- Populated dynamically by list items -->
+                        <li class="list-group-item">Loading...</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- TAB PANE: USER MANAGEMENT (MANAGERS & ADMINS) -->
+            <section class="tab-pane d-none" id="tab-users">
+                <div class="card shadow-sm border">
+                    <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                        <span>User Accounts</span>
+                        <button class="btn btn-sm btn-primary" onclick="openCreateUserModal()">
+                            <i class="bi bi-person-plus-fill"></i> Create New User
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    <!-- Populated dynamically by JS -->
+                                    <tr>
+                                        <td colspan="7" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB PANE: TICKET DETAILS (TIMELINE, COMMENTS, UPLOADS) -->
+            <section class="tab-pane d-none" id="tab-details">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <h2 class="fw-bold text-primary mb-0" id="det-number">COMP-0000-0000</h2>
+                        <h5 class="text-muted mt-1 fw-normal" id="det-title">Ticket Title</h5>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="switchTab('tab-list')">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </button>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left details column -->
+                    <div class="col-lg-8">
+                        
+                        <!-- Description card -->
+                        <div class="card shadow-sm border mb-4">
+                            <div class="card-header bg-light fw-bold">Description</div>
+                            <div class="card-body">
+                                <p class="card-text" id="det-desc" style="white-space: pre-line;">Details...</p>
+                            </div>
+                        </div>
+
+                        <!-- Resolution Notes card (shown if resolved/closed) -->
+                        <div class="card shadow-sm border mb-4 border-success d-none" id="det-res-row" style="background-color: #f6fff9;">
+                            <div class="card-header bg-success text-white fw-bold">Resolution Explanation</div>
+                            <div class="card-body">
+                                <p class="card-text fw-bold text-success" id="det-resolution" style="white-space: pre-line;">Fix details...</p>
+                            </div>
+                        </div>
+
+                        <!-- Verify resolution actions panel -->
+                        <div class="card shadow-sm border mb-4 border-primary d-none" id="verification-panel">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="fw-bold text-primary mb-1">Verify Fix Resolution</h6>
+                                    <p class="text-muted small mb-0">Is the problem solved to your satisfaction?</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-danger" onclick="handleVerify('Reopen')">Reopen Ticket</button>
+                                    <button class="btn btn-sm btn-success" onclick="handleVerify('Close')">Verify & Close</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comments chat timeline card -->
+                        <div class="card shadow-sm border mb-4">
+                            <div class="card-header bg-light fw-bold">Comments Log</div>
+                            <div class="card-body">
+                                <div id="comments-container" style="max-height: 400px; overflow-y: auto;">
+                                    <!-- Populated dynamically by comment boxes -->
+                                    <p class="text-muted small">Loading...</p>
+                                </div>
+                                
+                                <!-- Comments submission input -->
+                                <form id="comment-submit-form" class="mt-4 pt-3 border-top">
+                                    <div class="input-group">
+                                        <input type="text" id="comment-text" class="form-control" placeholder="Type a comment..." required>
+                                        <button class="btn btn-primary" type="submit">Send</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right meta details column -->
+                    <div class="col-lg-4">
+                        
+                        <!-- Properties list -->
+                        <div class="card shadow-sm border mb-4">
+                            <div class="card-header bg-light fw-bold">Ticket Properties</div>
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Status:</span><span class="fw-bold" id="det-status">New</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Priority:</span><span class="fw-bold" id="det-priority">Medium</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Location:</span><span class="fw-bold" id="det-location">Location</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Category:</span><span class="fw-bold" id="det-category">Category</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Department:</span><span class="fw-bold" id="det-department">Department</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Reported By:</span><span class="fw-bold" id="det-raised">Employee</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Assigned Technician:</span><span class="fw-bold" id="det-tech">Technician</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Created Date:</span><span class="fw-bold" id="det-created">Date</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Last Updated:</span><span class="fw-bold" id="det-updated">Date</span></li>
+                                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Closed Date:</span><span class="fw-bold" id="det-closed">Date</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- Attachments card -->
+                        <div class="card shadow-sm border mb-4">
+                            <div class="card-header bg-light fw-bold">Files & Attachments</div>
+                            <div class="card-body">
+                                <div id="attachments-container">
+                                    <!-- Populated dynamically by files list -->
+                                    <p class="text-muted small">Loading...</p>
+                                </div>
+                                
+                                <!-- File Upload form -->
+                                <form id="upload-submit-form" class="mt-3 pt-3 border-top">
+                                    <div class="mb-2">
+                                        <input type="file" id="upload-file" class="form-control form-control-sm" required>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Upload File</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- History log timeline -->
+                        <div class="card shadow-sm border">
+                            <div class="card-header bg-light fw-bold">State Changes History</div>
+                            <div class="card-body">
+                                <div class="history-timeline" id="timeline-container">
+                                    <!-- Populated dynamically by timeline nodes -->
+                                    <p class="text-muted small">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: ASSIGN TECHNICIAN (MANAGER VIEW) -->
+    <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h5 class="modal-title" id="assignModalLabel">Assign Technician</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </header>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="tech-select" class="form-label fw-bold small text-secondary">Select Available Department Technician</label>
+                        <select id="tech-select" class="form-select">
+                            <option value="">-- Choose Technician --</option>
+                        </select>
+                    </div>
+                </div>
+                <footer class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitTechnicianAssignment()">Save Assignment</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: RESOLVE TICKET (TECHNICIAN VIEW) -->
+    <div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h5 class="modal-title" id="resolveModalLabel">Resolve Complaint</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </header>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resolution-note" class="form-label fw-bold small text-secondary">Resolution Explanation *</label>
+                        <textarea id="resolution-note" class="form-control" rows="4" placeholder="Describe what was done to fix the issue..." required></textarea>
+                    </div>
+                </div>
+                <footer class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="submitTaskResolution()">Confirm Resolution</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: CREATE NEW USER (ADMIN / MANAGER VIEW) -->
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h5 class="modal-title" id="createUserModalLabel">Register New User Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </header>
+                <form id="create-user-form">
+                    <div class="modal-body">
+                        <!-- Employee ID -->
+                        <div class="mb-3">
+                            <label for="usr-emp-id" class="form-label fw-bold small text-secondary">Employee ID *</label>
+                            <input type="text" id="usr-emp-id" class="form-control" placeholder="e.g. EMP002" required>
+                        </div>
+                        
+                        <!-- Name -->
+                        <div class="mb-3">
+                            <label for="usr-name" class="form-label fw-bold small text-secondary">Full Name *</label>
+                            <input type="text" id="usr-name" class="form-control" placeholder="e.g. John Smith" required>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="usr-email" class="form-label fw-bold small text-secondary">Email Address *</label>
+                            <input type="email" id="usr-email" class="form-control" placeholder="e.g. jsmith@company.com" required>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label for="usr-password" class="form-label fw-bold small text-secondary">Temporary Password *</label>
+                            <input type="password" id="usr-password" class="form-control" placeholder="Minimum 6 characters" required>
+                        </div>
+
+                        <!-- Role -->
+                        <div class="mb-3">
+                            <label for="usr-role" class="form-label fw-bold small text-secondary">System Role *</label>
+                            <select id="usr-role" class="form-select" required>
+                                <option value="Employee">Employee</option>
+                                <option value="Technician">Technician</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Administrator">Administrator</option>
+                            </select>
+                        </div>
+
+                        <!-- Department Selection -->
+                        <div class="mb-3" id="usr-dept-group">
+                            <label for="usr-dept" class="form-label fw-bold small text-secondary">Department *</label>
+                            <select id="usr-dept" class="form-select" required>
+                                <option value="">-- Choose Department --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <footer class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="usr-submit-btn">Register User</button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS containing Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Load JavaScript modules in order -->
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
