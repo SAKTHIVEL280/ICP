@@ -46,6 +46,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // New User registration form submission handler
     document.getElementById("create-user-form").addEventListener("submit", handleUserCreateSubmit);
 
+    // Profile form submission handler
+    document.getElementById("profile-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitProfileUpdate();
+    });
+
+    // Department CRUD form submission handler
+    document.getElementById("dept-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitDepartmentForm();
+    });
+
+    // Category CRUD form submission handler
+    document.getElementById("category-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitCategoryForm();
+    });
+
     // Start pulling notifications badge
     loadNotifications();
     // Poll notifications list every 15 seconds

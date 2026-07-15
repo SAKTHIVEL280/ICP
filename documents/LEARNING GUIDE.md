@@ -161,8 +161,11 @@ The User Management Console supports secure **Create, Read, Update, and Delete (
     *   **Employee / Technician**: Access denied. Cannot access this console.
 2.  **Automatic Employee ID Generation**:
     *   To prevent inconsistent manual inputs (e.g. entering "emp" with no numbers), the backend automatically assigns an ID formatted as `EMPxxx` (e.g. `EMP002`, `EMP003`) during creation.
-3.  **Delete Safeguard**:
-    *   To prevent breaking database integrity (which would happen if we deleted a user linked to active complaints), the backend route `DELETE /api/auth/users/<id>` validates if the user has raised or been assigned complaints. If they do, it blocks deletion and requests deactivation instead.
+3.  **Delete Safeguards**:
+    *   *Database Integrity*: To prevent database violations (which would happen if we deleted a user linked to active complaints), the backend route `DELETE /api/auth/users/<id>` validates if the user has raised or been assigned complaints. If they do, it blocks deletion and requests deactivation instead.
+    *   *Last Administrator Lock*: The backend checks if the user being deleted is an Administrator and counts the total system administrators. If it is the last administrator account, the deletion is blocked to prevent accidental system lockouts.
+    *   *Self-Deletion Block*: An Administrator is blocked from deleting their own currently logged-in account.
+    *   *PostgreSQL Identity Reset*: The database seeder (`seed.py`) executes sequence resets (`ALTER SEQUENCE ... RESTART WITH 1`) during clearing. This guarantees sequence ID counters reset to 1 on a fresh seed (assigning the initial Administrator ID 1 and generating next employee IDs starting at EMP002).
 4.  **Implementation Code**:
     *   **Backend ([auth_routes.py](file:///D:/Projects/ICP/backend/routes/auth_routes.py#L48-L115))**: Outlines `update_user` (PUT) and `delete_user` (DELETE) routes with security blocks.
     *   **Frontend ([dashboard.js](file:///D:/Projects/ICP/frontend/js/dashboard.js#L871-L1020))**: Utilizes `openEditUserModal()` to toggle the modal to "Edit Mode" (hiding password requirements and displaying status controls) and handles the deletion API requests.
@@ -183,12 +186,18 @@ When querying a backend running locally, you might encounter a "CORS error" that
 
 The database contains a single System Administrator account. All other accounts have been wiped so you can test user registration yourself:
 
-| Role | User Name | Login Email | Password |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | System Administrator | `admin@company.com` | `Admin@123` |
+| Role | User Name | Login Email | Password | Employee ID | Department Context |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Administrator** | System Administrator | `admin@compamy.com` | `Admin@123` | `EMP001` | System-wide |
+| **Employee** | Sakthivel | `sakthivel@company.com` | `Sakthivel@123` | `EMP002` | Human Resources |
+| **Manager** | Praveen | `praveen@company.com` | `Praveen@123` | `EMP003` | IT Support |
+| **Technician** | Pavithran | `pavithran@company.com` | `Pavithran@123` | `EMP004` | IT Support |
+| **Manager** | Naveen | `naveen@company.com` | `Naveen@123` | `EMP005` | Facilities |
+| **Technician** | Lokesh | `lokesh@company.com` | `Lokesh@123` | `EMP006` | Facilities |
+| **Employee** | Harish | `harish@company.com` | `Harish@123` | `EMP007` | IT Support |
 
 ### To test the portal:
-1.  Log in as the **System Administrator** (`admin@company.com` / `Admin@123`).
+1.  Log in as the **System Administrator** (`admin@compamy.com` / `Admin@123`).
 2.  Go to the **User Management** tab.
 3.  Click **Create New User** to register:
     *   A Manager (e.g., Sarah Connor in IT Support).

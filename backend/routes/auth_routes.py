@@ -159,12 +159,18 @@ def delete_user(target_id):
     if role != "Administrator":
         return jsonify({"error": "Access denied. Administrator role required."}), 403
         
-    if target_id == 1:
-        return jsonify({"error": "Cannot delete the System Administrator."}), 400
+    current_user_id = int(get_jwt_identity())
+    if target_id == current_user_id:
+        return jsonify({"error": "You cannot delete your own logged-in account."}), 400
         
     user = User.query.get(target_id)
     if not user:
         return jsonify({"error": "User not found."}), 404
+        
+    if user.role == "Administrator":
+        admin_count = User.query.filter_by(role="Administrator").count()
+        if admin_count <= 1:
+            return jsonify({"error": "Cannot delete the last System Administrator account in the system."}), 400
         
     # Check if user has complaints raised or tasks assigned
     from models.complaint import Complaint

@@ -85,9 +85,15 @@ Make sure you have **PostgreSQL** installed and running on your system, and a da
 
 Use the default Administrator account to access the portal. You can then use the **User Management** tab to register other roles, the **System Config** tab to configure departments/categories, or click **Edit Profile** to update your account settings:
 
-| Role | User Name | Login Email | Password | Employee ID |
-| :--- | :--- | :--- | :--- | :--- |
-| **Administrator** | System Administrator | `admin@company.com` | `Admin@123` | `EMP001` |
+| Role | User Name | Login Email | Password | Employee ID | Department Context |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Administrator** | System Administrator | `admin@compamy.com` | `Admin@123` | `EMP001` | System-wide |
+| **Employee** | Sakthivel | `sakthivel@company.com` | `Sakthivel@123` | `EMP002` | Human Resources |
+| **Manager** | Praveen | `praveen@company.com` | `Praveen@123` | `EMP003` | IT Support |
+| **Technician** | Pavithran | `pavithran@company.com` | `Pavithran@123` | `EMP004` | IT Support |
+| **Manager** | Naveen | `naveen@company.com` | `Naveen@123` | `EMP005` | Facilities |
+| **Technician** | Lokesh | `lokesh@company.com` | `Lokesh@123` | `EMP006` | Facilities |
+| **Employee** | Harish | `harish@company.com` | `Harish@123` | `EMP007` | IT Support |
 
 ---
 

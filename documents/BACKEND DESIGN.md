@@ -50,8 +50,10 @@ backend/
 │
 ├── routes/                     # Blueprint API Endpoints
 │   ├── auth_routes.py          # /api/auth/* endpoints (login, register, users listing)
+│   ├── admin_routes.py         # /api/admin/* endpoints (category and department CRUD)
 │   ├── complaint_routes.py     # /api/complaints/* endpoints (standard CRUD, comments)
 │   ├── manager_routes.py       # /api/manager/* endpoints (technician assignment)
+│   ├── technician_routes.py    # /api/technician/* endpoints (technician task management)
 │   ├── notification_routes.py  # /api/notifications/* endpoints (alerts list)
 │   ├── report_routes.py        # /api/reports/* endpoints (summary counts, CSS charts)
 │   └── test_routes.py          # Quick development diagnostic routes
